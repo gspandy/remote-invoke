@@ -25,10 +25,14 @@ public class ProxyXmlWebApplicationContext extends XmlWebApplicationContext {
     private static final PathMatchingResourcePatternResolver PMRPR = new PathMatchingResourcePatternResolver(AnnotationUtil.class.getClassLoader());
     private static final Properties CONTEXT_PROPS = new Properties();
     private static final Map<Class<?>, Set<String>> PROXY_BEAN_MAPPINGS = new HashMap<Class<?>, Set<String>>();
+    private static final Set<String> BEAN_NAMES_HOLDER = new HashSet<String>();
 
     private static final void addProxyBean(Class<?> beanClass, String beanName) {
         if (logger.isLoggable(Level.INFO)) {
             logger.info("loaded proxy bean[beanName:" + beanName + ", class:" + beanClass.getName() + "].");
+        }
+        if (!BEAN_NAMES_HOLDER.contains(beanName)) {
+            BEAN_NAMES_HOLDER.add(beanName);
         }
         Set<String> beanNameSet = PROXY_BEAN_MAPPINGS.get(beanClass);
         if (beanNameSet == null) {
@@ -323,6 +327,13 @@ public class ProxyXmlWebApplicationContext extends XmlWebApplicationContext {
                 }
                 if (providerRef == null) {
                     throw new IllegalStateException("Class[" + targetClass + "] is not a ProxyConsumer subclass");
+                }
+                /*if (BEAN_NAMES_HOLDER.contains(providerRef)) {
+                    providerRef = "_" + providerRef + "_" + provider.getVersion();
+                }*/
+
+                if (BEAN_NAMES_HOLDER.contains(providerRef)) {
+                    throw new IllegalStateException("Class[" + targetClass + "] bean_id has defined");
                 }
             }
             print.print("<hsf:provider");
