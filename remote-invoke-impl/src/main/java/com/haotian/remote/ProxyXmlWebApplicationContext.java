@@ -303,11 +303,27 @@ public class ProxyXmlWebApplicationContext extends XmlWebApplicationContext {
         print.println("http://www.taobao.com/hsf/hsf.xsd\">");
         for (RemoteProvider provider : providers) {
             String providerRef = getRealValue(provider.getRef());
-            if (providerRef == null || "".equals(providerRef)) {
+            if ((providerRef == null || "".equals(providerRef)) && provider.getRemoteFactoryBean() == null) {
                 if (logger.isLoggable(Level.INFO)) {
                     logger.info("Provider [" + getRealValue(provider.getInterface()) + ":" + getRealValue(provider.getVersion()) + "] ref not exists.");
                 }
                 continue;
+            }
+
+            RemoteFactoryBean remoteFactoryBean = provider.getRemoteFactoryBean();
+            if (providerRef == null || "".equals(providerRef)) {
+                Class<?> targetClass = remoteFactoryBean.getObjectType();
+                Class<?>[] interfaces = targetClass.getInterfaces();
+                for (Class<?> intface : interfaces) {
+                    ProxyConsumer proxyConsumer = intface.getAnnotation(ProxyConsumer.class);
+                    if (proxyConsumer == null) {
+                        continue;
+                    }
+                    providerRef = proxyConsumer.beanId();
+                }
+                if (providerRef == null) {
+                    throw new IllegalStateException("Class[" + targetClass + "] is not a ProxyConsumer subclass");
+                }
             }
             print.print("<hsf:provider");
 
@@ -320,7 +336,7 @@ public class ProxyXmlWebApplicationContext extends XmlWebApplicationContext {
             print.print("\"");
 
             print.print(" ref=\"");
-            print.print(getRealValue(provider.getRef()));
+            print.print(getRealValue(providerRef));
             print.print("\"");
 
             print.print(" version=\"");
@@ -358,6 +374,24 @@ public class ProxyXmlWebApplicationContext extends XmlWebApplicationContext {
             }
 
             print.println("></hsf:provider>");
+
+            if (remoteFactoryBean != null) {
+                print.print("\n<bean id=\"");
+                print.print(providerRef);
+                print.print("\" class=\"");
+                print.print(RemoteProviderFactoryBean.class.getName());
+                print.print("\">");
+                print.print("\n    <property name=\"remoteFactoryBean\">");
+                print.print("\n        <bean class=\"");
+                print.print(remoteFactoryBean.getClass().getName());
+                print.print("\">");
+                print.print("\n            <property name=\"objectType\" value=\"");
+                print.print(remoteFactoryBean.getObjectType().getName());
+                print.print("\"/>");
+                print.print("\n        </bean>");
+                print.print("\n    </property>");
+                print.print("\n</bean>");
+            }
         }
         print.println("</beans>");
         print.flush();

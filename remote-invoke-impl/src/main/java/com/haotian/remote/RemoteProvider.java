@@ -1,8 +1,10 @@
 package com.haotian.remote;
 
 import java.util.Set;
+import java.util.logging.Logger;
 
 public class RemoteProvider {
+    private final Logger logger = Logger.getLogger(this.getClass().getName());
     private String version;
     private long clientTimeout;
     private String serializeType;
@@ -11,6 +13,8 @@ public class RemoteProvider {
     private String intface;
     private String group;
     private String ref;
+
+    private RemoteFactoryBean remoteFactoryBean;
 
     protected RemoteProvider(Class<?> providerClazz) {
         ProxyProvider proxyProvider = providerClazz.getAnnotation(ProxyProvider.class);
@@ -22,16 +26,35 @@ public class RemoteProvider {
         this.intface = providerClazz.getInterfaces()[0].getName();
         this.group = proxyProvider.group();
 
+        RemoteHandler remoteHandler = providerClazz.getAnnotation(RemoteHandler.class);
+
         Set<String> refSet = ProxyXmlWebApplicationContext.getBeanNames(providerClazz);
-        if (refSet == null) {
+        if (refSet == null && remoteHandler == null) {
             return;
         }
-        if (refSet.size() > 1) {
-            throw new RuntimeException("find more providerClass[" + providerClazz.getName() + "] for remote provider.");
+        if (refSet != null) {
+            if (refSet.size() > 1) {
+                throw new RuntimeException("find more providerClass[" + providerClazz.getName() + "] for remote provider.");
+            }
+            if (!refSet.isEmpty()) {
+                this.ref = refSet.iterator().next();
+            }
         }
-        this.ref = refSet.iterator().next();
+
+        logger.info("Class[" + providerClazz.getName() + "] remote handler[" + (remoteHandler == null ? "none" : remoteHandler.value().getName()) + "]");
+        if (remoteHandler != null) {
+            try {
+                remoteFactoryBean = remoteHandler.value().newInstance();
+                remoteFactoryBean.setObjectType(providerClazz);
+            } catch (Throwable e) {
+                throw new IllegalArgumentException("Init remote factory bean error", e);
+            }
+        }
     }
 
+    public RemoteFactoryBean getRemoteFactoryBean() {
+        return remoteFactoryBean;
+    }
 
     public String getRef() {
         return ref;
