@@ -14,5 +14,5 @@ import java.lang.annotation.*;
 @Documented
 @Component
 public @interface RemoteHandler {
-    Class<? extends RemoteFactoryBean> value();
+    Class<? extends RemoteInvokeHandler> value();
 }

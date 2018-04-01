@@ -44,8 +44,10 @@ public class RemoteProvider {
         logger.info("Class[" + providerClazz.getName() + "] remote handler[" + (remoteHandler == null ? "none" : remoteHandler.value().getName()) + "]");
         if (remoteHandler != null) {
             try {
-                remoteFactoryBean = remoteHandler.value().newInstance();
-                remoteFactoryBean.setObjectType(providerClazz);
+                RemoteInvokeHandler remoteInvokeHandler = remoteHandler.value().newInstance();
+                if (remoteInvokeHandler.support(providerClazz)) {
+                    remoteFactoryBean = new RemoteFactoryBeanImpl(remoteInvokeHandler, providerClazz);
+                }
             } catch (Throwable e) {
                 throw new IllegalArgumentException("Init remote factory bean error", e);
             }
