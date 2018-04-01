@@ -14,7 +14,7 @@ public class RemoteProvider {
     private String group;
     private String ref;
 
-    private RemoteFactoryBean remoteFactoryBean;
+    private RemoteProviderFactoryBean remoteProviderFactoryBean;
 
     protected RemoteProvider(Class<?> providerClazz) {
         ProxyProvider proxyProvider = providerClazz.getAnnotation(ProxyProvider.class);
@@ -44,9 +44,9 @@ public class RemoteProvider {
         logger.info("Class[" + providerClazz.getName() + "] remote handler[" + (remoteHandler == null ? "none" : remoteHandler.value().getName()) + "]");
         if (remoteHandler != null) {
             try {
-                RemoteInvokeHandler remoteInvokeHandler = remoteHandler.value().newInstance();
+                RemoteInvokeHandler remoteInvokeHandler = RemoteProviderFactoryBean.getRemoteInvokeHandler(remoteHandler.value());
                 if (remoteInvokeHandler.support(providerClazz)) {
-                    remoteFactoryBean = new RemoteFactoryBeanImpl(remoteInvokeHandler, providerClazz);
+                    remoteProviderFactoryBean = new RemoteProviderFactoryBean(remoteInvokeHandler, providerClazz);
                 }
             } catch (Throwable e) {
                 throw new IllegalArgumentException("Init remote factory bean error", e);
@@ -54,8 +54,8 @@ public class RemoteProvider {
         }
     }
 
-    public RemoteFactoryBean getRemoteFactoryBean() {
-        return remoteFactoryBean;
+    public RemoteProviderFactoryBean getRemoteProviderFactoryBean() {
+        return remoteProviderFactoryBean;
     }
 
     public String getRef() {

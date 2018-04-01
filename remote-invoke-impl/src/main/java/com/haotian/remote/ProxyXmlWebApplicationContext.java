@@ -307,16 +307,16 @@ public class ProxyXmlWebApplicationContext extends XmlWebApplicationContext {
         print.println("http://www.taobao.com/hsf/hsf.xsd\">");
         for (RemoteProvider provider : providers) {
             String providerRef = getRealValue(provider.getRef());
-            if ((providerRef == null || "".equals(providerRef)) && provider.getRemoteFactoryBean() == null) {
+            if ((providerRef == null || "".equals(providerRef)) && provider.getRemoteProviderFactoryBean() == null) {
                 if (logger.isLoggable(Level.INFO)) {
                     logger.info("Provider [" + getRealValue(provider.getInterface()) + ":" + getRealValue(provider.getVersion()) + "] ref not exists.");
                 }
                 continue;
             }
 
-            RemoteFactoryBean remoteFactoryBean = provider.getRemoteFactoryBean();
+            RemoteProviderFactoryBean remoteProviderFactoryBean = provider.getRemoteProviderFactoryBean();
             if (providerRef == null || "".equals(providerRef)) {
-                Class<?> targetClass = remoteFactoryBean.getObjectType();
+                Class<?> targetClass = remoteProviderFactoryBean.getObjectType();
                 Class<?>[] interfaces = targetClass.getInterfaces();
                 for (Class<?> intface : interfaces) {
                     ProxyConsumer proxyConsumer = intface.getAnnotation(ProxyConsumer.class);
@@ -386,21 +386,19 @@ public class ProxyXmlWebApplicationContext extends XmlWebApplicationContext {
 
             print.println("></hsf:provider>");
 
-            if (remoteFactoryBean != null) {
+            if (remoteProviderFactoryBean != null) {
                 print.print("\n<bean id=\"");
                 print.print(providerRef);
                 print.print("\" class=\"");
                 print.print(RemoteProviderFactoryBean.class.getName());
                 print.print("\">");
-                print.print("\n    <property name=\"remoteFactoryBean\">");
-                print.print("\n        <bean class=\"");
-                print.print(remoteFactoryBean.getClass().getName());
-                print.print("\">");
-                print.print("\n            <property name=\"objectType\" value=\"");
-                print.print(remoteFactoryBean.getObjectType().getName());
+                print.print("\n    <constructor-arg index=\"0\" value=\"");
+                print.print(remoteProviderFactoryBean.getRemoteInvokeHandlerClass().getName());
                 print.print("\"/>");
-                print.print("\n        </bean>");
-                print.print("\n    </property>");
+
+                print.print("\n    <constructor-arg index=\"1\" value=\"");
+                print.print(remoteProviderFactoryBean.getObjectType().getName());
+                print.print("\"/>");
                 print.print("\n</bean>");
             }
         }

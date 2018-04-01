@@ -1,21 +1,34 @@
 package com.haotian.remote;
 
 import org.springframework.beans.factory.FactoryBean;
-import org.springframework.beans.factory.InitializingBean;
 
-public class RemoteProviderFactoryBean implements FactoryBean, InitializingBean {
+import java.lang.reflect.Proxy;
+import java.util.HashMap;
+import java.util.Map;
+
+public class RemoteProviderFactoryBean implements FactoryBean {
     private Object target;
-    private Class targetClass;
-    private RemoteFactoryBean remoteFactoryBean;
+    private Class objectType;
+    private RemoteInvokeHandler remoteInvokeHandler;
+    private static final Map<Class<? extends RemoteInvokeHandler>, RemoteInvokeHandler> REMOTE_INVOKE_HANDLER_MAPPING = new HashMap<Class<? extends RemoteInvokeHandler>, RemoteInvokeHandler>();
 
-    public void setRemoteFactoryBean(RemoteFactoryBean remoteFactoryBean) {
-        this.remoteFactoryBean = remoteFactoryBean;
+    RemoteProviderFactoryBean(RemoteInvokeHandler remoteInvokeHandler, Class<?> objectType) {
+        this.remoteInvokeHandler = remoteInvokeHandler;
+        this.objectType = objectType;
+        this.target = Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{this.objectType}, this.remoteInvokeHandler);
     }
 
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        this.target = remoteFactoryBean.getObject();
-        this.targetClass = this.target.getClass();
+    static RemoteInvokeHandler getRemoteInvokeHandler(Class<? extends RemoteInvokeHandler> remoteInvokeHandlerClass) throws IllegalAccessException, InstantiationException {
+        RemoteInvokeHandler remoteInvokeHandler = REMOTE_INVOKE_HANDLER_MAPPING.get(remoteInvokeHandlerClass);
+        if (remoteInvokeHandler == null) {
+            remoteInvokeHandler = remoteInvokeHandlerClass.newInstance();
+            REMOTE_INVOKE_HANDLER_MAPPING.put(remoteInvokeHandlerClass, remoteInvokeHandler);
+        }
+        return remoteInvokeHandler;
+    }
+
+    protected RemoteProviderFactoryBean(Class<RemoteInvokeHandler> remoteInvokeHandlerClass, Class<?> objectType) throws IllegalAccessException, InstantiationException {
+        this(getRemoteInvokeHandler(remoteInvokeHandlerClass), objectType);
     }
 
     @Override
@@ -25,7 +38,7 @@ public class RemoteProviderFactoryBean implements FactoryBean, InitializingBean 
 
     @Override
     public Class getObjectType() {
-        return this.targetClass;
+        return this.objectType;
     }
 
     @Override
@@ -33,4 +46,7 @@ public class RemoteProviderFactoryBean implements FactoryBean, InitializingBean 
         return true;
     }
 
+    public Class<? extends RemoteInvokeHandler> getRemoteInvokeHandlerClass() {
+        return remoteInvokeHandler.getClass();
+    }
 }
