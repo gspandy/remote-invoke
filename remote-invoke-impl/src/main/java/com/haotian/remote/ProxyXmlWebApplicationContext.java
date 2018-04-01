@@ -85,10 +85,20 @@ public class ProxyXmlWebApplicationContext extends XmlWebApplicationContext {
         reader.loadBeanDefinitions("classpath:" + remoteFileName);
     }
 
+    private static String getRemoteScanPackageName() {
+        String scanPackage = CONTEXT_PROPS.getProperty("remote.scan.package");
+        String scanTip = "[remote.scan.package] not configured in properties file. scan all package for remote invoke";
+        if (!(scanPackage == null || "".equals(scanPackage))) {
+            scanTip = "scan package[" + scanPackage + "] for remote invoke";
+        }
+        logger.info(scanTip);
+        return scanPackage;
+    }
+
     public static List<RemoteProvider> extractProviderList() {
         List<RemoteProvider> providerList;
         try {
-            providerList = AnnotationUtil.extractProxyProviders();
+            providerList = AnnotationUtil.extractProxyProviders(getRemoteScanPackageName());
         } catch (Exception e) {
             throw new RuntimeException("extract proxyprovider error", e);
         }
@@ -98,7 +108,7 @@ public class ProxyXmlWebApplicationContext extends XmlWebApplicationContext {
     public static List<RemoteConsumer> extractConsumerList() {
         List<RemoteConsumer> consumerList;
         try {
-            consumerList = AnnotationUtil.extractProxyConsumers();
+            consumerList = AnnotationUtil.extractProxyConsumers(getRemoteScanPackageName());
         } catch (Exception e) {
             throw new RuntimeException("extract proxyconsumer error", e);
         }
@@ -181,30 +191,19 @@ public class ProxyXmlWebApplicationContext extends XmlWebApplicationContext {
         return springBeans;
     }
 
-    private static String getRealValue(String value) {
+    private static String getRealValue(final String value) {
         if (value == null || !value.startsWith("${") || !value.endsWith("}")) {
             return value;
         }
         String key = value.substring(2, value.length() - 1);
-        if ("LIQUIDATION_VERSION".equals(key)) {
-            return "1.0.0";
+        String parsedValue = CONTEXT_PROPS.getProperty(key);
+        if (parsedValue == null || "".equals(parsedValue)) {
+            throw new RuntimeException("extract [" + value + "] value is empty.");
         }
-        if ("LIQUIDATION_GROUP".equals(key)) {
-            return "LIQUIDATION_DEV_GROUP";
+        if (logger.isLoggable(Level.INFO)) {
+            logger.info("extract [" + value + "] value is [" + parsedValue + "].");
         }
-        if ("MANAGE_VERSION".equals(key)) {
-            return "1.0.0";
-        }
-        if ("MANAGE_GROUP".equals(key)) {
-            return "MANAGE_DEV_GROUP";
-        }
-        if ("SETTLEMENT_VERSION".equals(key)) {
-            return "1.0.0";
-        }
-        if ("SETTLEMENT_GROUP".equals(key)) {
-            return "SETTLEMENT_DEV_GROUP";
-        }
-        return CONTEXT_PROPS.getProperty(key);
+        return parsedValue;
     }
 
     private static byte[] generateHsfConsumerBeans(List<RemoteConsumer> consumers, List<RemoteProvider> providerList) {

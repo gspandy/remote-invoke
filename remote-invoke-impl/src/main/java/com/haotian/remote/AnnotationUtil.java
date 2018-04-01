@@ -25,8 +25,12 @@ public class AnnotationUtil {
      * @throws IOException
      * @throws ClassNotFoundException
      */
-    public static List<RemoteConsumer> extractProxyConsumers() throws IOException, ClassNotFoundException {
-        List<String> consumerList = extractAnnotationClazzes(ProxyConsumer.class, "classpath*:**/*.class");
+    public static List<RemoteConsumer> extractProxyConsumers(final String packageName) throws IOException, ClassNotFoundException {
+        String scanPath = "classpath*:**/*.class";
+        if (!(packageName == null || "".equals(packageName))) {
+            scanPath = "classpath*:" + packageName.replace(".", "/") + "/*.class";
+        }
+        List<String> consumerList = extractAnnotationClazzes(ProxyConsumer.class, scanPath);
         List<RemoteConsumer> proxyConsumerList = new ArrayList<RemoteConsumer>(consumerList.size());
         for (String consumer : consumerList) {
             proxyConsumerList.add(new RemoteConsumer(Class.forName(consumer)));
@@ -41,8 +45,12 @@ public class AnnotationUtil {
      * @throws IOException
      * @throws ClassNotFoundException
      */
-    public static List<RemoteProvider> extractProxyProviders() throws IOException, ClassNotFoundException {
-        List<String> providerList = extractAnnotationClazzes(ProxyProvider.class, "classpath*:**/*.class");
+    public static List<RemoteProvider> extractProxyProviders(final String packageName) throws IOException, ClassNotFoundException {
+        String scanPath = "classpath*:**/*.class";
+        if (!(packageName == null || "".equals(packageName))) {
+            scanPath = "classpath*:" + packageName.replace(".", "/") + "/*.class";
+        }
+        List<String> providerList = extractAnnotationClazzes(ProxyProvider.class, scanPath);
         List<RemoteProvider> proxyProviderList = new ArrayList<RemoteProvider>(providerList.size());
         for (String provider : providerList) {
             proxyProviderList.add(new RemoteProvider(Class.forName(provider)));
