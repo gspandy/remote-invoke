@@ -1,5 +1,6 @@
 package com.haotian.remote;
 
+import com.haotian.plugins.config.PropertiesBeanFactory;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
 import org.springframework.beans.factory.config.PropertiesFactoryBean;
@@ -123,6 +124,7 @@ public class ProxyXmlWebApplicationContext extends XmlWebApplicationContext {
         List<Element> beanList = (List<Element>) rootElement.elements("bean");
         for (Element bean : beanList) {
             Class<?> beanClass = Class.forName(bean.attributeValue("class"));
+
             if (beanClass.getAnnotation(ProxyProvider.class) != null) {
                 String beanName = bean.attributeValue("id");
                 if (beanName == null) {
@@ -132,7 +134,7 @@ public class ProxyXmlWebApplicationContext extends XmlWebApplicationContext {
                     throw new RuntimeException("beanName required for class[" + beanClass.getName() + "] in file[" + contextLocation.getFilename() + "]");
                 }
                 ProxyXmlWebApplicationContext.addProxyBean(beanClass, beanName);
-            } else if (PropertiesFactoryBean.class.isAssignableFrom(beanClass)) {
+            } else if (PropertiesFactoryBean.class.isAssignableFrom(beanClass) || PropertiesBeanFactory.class.isAssignableFrom(beanClass)) {
                 ApplicationContext applicationContext = new ClassPathXmlApplicationContext("classpath*:**/" + contextLocation.getFilename());
                 String beanName = bean.attributeValue("id");
                 if (beanName == null) {

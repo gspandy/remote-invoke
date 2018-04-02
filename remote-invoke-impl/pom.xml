@@ -38,5 +38,9 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.haotian.plugins</groupId>
+            <artifactId>plugins-config-loader</artifactId>
+        </dependency>
     </dependencies>
 </project>
