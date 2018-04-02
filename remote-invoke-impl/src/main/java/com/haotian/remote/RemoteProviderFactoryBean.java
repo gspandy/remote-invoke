@@ -15,7 +15,7 @@ public class RemoteProviderFactoryBean implements FactoryBean {
     RemoteProviderFactoryBean(RemoteInvokeHandler remoteInvokeHandler, Class<?> objectType) {
         this.remoteInvokeHandler = remoteInvokeHandler;
         this.objectType = objectType;
-        this.target = Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{this.objectType}, this.remoteInvokeHandler);
+        this.target = Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{objectType.isInterface() ? objectType : objectType.getInterfaces()[0]}, this.remoteInvokeHandler);
     }
 
     static RemoteInvokeHandler getRemoteInvokeHandler(Class<? extends RemoteInvokeHandler> remoteInvokeHandlerClass) throws IllegalAccessException, InstantiationException {

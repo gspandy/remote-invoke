@@ -388,7 +388,7 @@ public class ProxyXmlWebApplicationContext extends XmlWebApplicationContext {
 
             print.println("></hsf:provider>");
 
-            if (remoteProviderFactoryBean != null) {
+            if (remoteProviderFactoryBean != null && remoteProviderFactoryBean.getObjectType().isInterface()) {
                 print.print("\n<bean id=\"");
                 print.print(providerRef);
                 print.print("\" class=\"");
