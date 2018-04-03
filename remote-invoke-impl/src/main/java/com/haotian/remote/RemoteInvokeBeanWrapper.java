@@ -83,6 +83,8 @@ public class RemoteInvokeBeanWrapper implements BeanPostProcessor {
             findSource = true;
             break;
         }
+        RemoteHandler beanRemoteHandler = beanClass.getAnnotation(RemoteHandler.class);
+        findSource = findSource || (beanRemoteHandler != null);
         if (!findSource) {
             if (logger.isLoggable(Level.INFO)) {
                 logger.info("beanName[" + beanName + "] has not RemoteHandler method; return source bean");
@@ -94,6 +96,6 @@ public class RemoteInvokeBeanWrapper implements BeanPostProcessor {
         if (logger.isLoggable(Level.INFO)) {
             logger.info("wrap bean[" + beanName + "]");
         }
-        return Proxy.newProxyInstance(this.getClass().getClassLoader(), supperInterfaces, new RemoteMethodInvokeHandler(bean, methods));
+        return Proxy.newProxyInstance(this.getClass().getClassLoader(), supperInterfaces, new RemoteMethodInvokeHandler(bean, methods, beanRemoteHandler));
     }
 }

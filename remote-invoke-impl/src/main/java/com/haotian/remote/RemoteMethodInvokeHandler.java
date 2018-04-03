@@ -11,11 +11,21 @@ import java.util.logging.Logger;
 
 public class RemoteMethodInvokeHandler implements InvocationHandler {
     private final Logger logger = Logger.getLogger(this.getClass().getName());
-    private Object targetBean;
-    private Map<String, List<Method>> methodMapping = new HashMap<String, List<Method>>();
+    private final Object targetBean;
+    private final Map<String, List<Method>> methodMapping = new HashMap<String, List<Method>>();
+    private final InvocationHandler targetBeanInvocationHandler;
 
-    RemoteMethodInvokeHandler(Object targetBean, Method[] methods) {
+    RemoteMethodInvokeHandler(Object targetBean, Method[] methods, RemoteHandler targetBeanRemoteHandler) {
         this.targetBean = targetBean;
+        if (targetBeanRemoteHandler != null) {
+            try {
+                this.targetBeanInvocationHandler = RemoteProviderFactoryBean.getRemoteInvokeHandler(targetBeanRemoteHandler.value());
+            } catch (Throwable e) {
+                throw new IllegalStateException("init bean invoke handler error", e);
+            }
+        } else {
+            this.targetBeanInvocationHandler = null;
+        }
         for (Method method: methods) {
             List<Method> innerMethods = methodMapping.get(method.getName());
             if (innerMethods == null) {
@@ -63,7 +73,7 @@ public class RemoteMethodInvokeHandler implements InvocationHandler {
         Method methodGetTargetSource = null;
         RemoteHandler remoteHandler = invokeMethod.getAnnotation(RemoteHandler.class);
         if (remoteHandler == null) {
-            return method.invoke(this.targetBean, args);
+            return targetBeanInvocationHandler == null ? method.invoke(this.targetBean, args): targetBeanInvocationHandler.invoke(this.targetBean, method, args);
         }
         InvocationHandler invocationHandler = RemoteProviderFactoryBean.getRemoteInvokeHandler(remoteHandler.value());
         return invocationHandler.invoke(this.targetBean, method, args);
