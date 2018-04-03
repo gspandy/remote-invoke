@@ -175,6 +175,7 @@ public class ProxyXmlWebApplicationContext extends XmlWebApplicationContext {
         String remoteStrategy = CONTEXT_PROPS.getProperty("remote.strategy");
         if (remoteStrategy == null) {
             remoteStrategy = "HSF";
+            logger.warning("[remote.strategy] not configured in properties file. use [" + remoteStrategy + "] as default invoke strategy");
         }
         return remoteStrategy;
     }
