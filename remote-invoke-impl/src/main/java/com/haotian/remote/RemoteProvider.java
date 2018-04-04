@@ -16,15 +16,15 @@ public class RemoteProvider {
 
     private RemoteProviderFactoryBean remoteProviderFactoryBean;
 
-    protected RemoteProvider(Class<?> providerClazz) {
+    public RemoteProvider(Class<?> providerClazz) {
         ProxyProvider proxyProvider = providerClazz.getAnnotation(ProxyProvider.class);
-        this.version = proxyProvider.version();
+        this.version = ProxyXmlWebApplicationContext.getRealValue(proxyProvider.version());
         this.clientTimeout = proxyProvider.clientTimeout();
-        this.serializeType = proxyProvider.serializeType();
+        this.serializeType = ProxyXmlWebApplicationContext.getRealValue(proxyProvider.serializeType());
         this.corePoolSize = proxyProvider.corePoolSize();
         this.maxPoolSize = proxyProvider.maxPoolSize();
         this.intface = providerClazz.getInterfaces()[0].getName();
-        this.group = proxyProvider.group();
+        this.group = ProxyXmlWebApplicationContext.getRealValue(proxyProvider.group());
 
         RemoteHandler remoteHandler = providerClazz.getAnnotation(RemoteHandler.class);
 
@@ -42,7 +42,7 @@ public class RemoteProvider {
         }
 
         logger.info("Class[" + providerClazz.getName() + "] remote handler[" + (remoteHandler == null ? "none" : remoteHandler.value().getName()) + "]");
-        if (remoteHandler != null) {
+        if (this.ref == null && remoteHandler != null) {
             try {
                 RemoteInvokeHandler remoteInvokeHandler = RemoteProviderFactoryBean.getRemoteInvokeHandler(remoteHandler.value());
                 if (remoteInvokeHandler.support(providerClazz)) {
@@ -51,6 +51,23 @@ public class RemoteProvider {
             } catch (Throwable e) {
                 throw new IllegalArgumentException("Init remote factory bean error", e);
             }
+            RemoteProviderFactoryBean remoteProviderFactoryBean = this.getRemoteProviderFactoryBean();
+            Class<?> targetClass = remoteProviderFactoryBean.getObjectType();
+            Class<?>[] interfaces = targetClass.getInterfaces();
+            for (Class<?> intface : interfaces) {
+                ProxyConsumer proxyConsumer = intface.getAnnotation(ProxyConsumer.class);
+                if (proxyConsumer == null) {
+                    continue;
+                }
+                this.ref = proxyConsumer.beanId();
+                break;
+            }
+            if (this.ref == null) {
+                throw new IllegalStateException("Class[" + targetClass + "] is not a ProxyConsumer subclass");
+            }
+        }
+        if (this.ref == null) {
+            throw new IllegalStateException("Class[" + providerClazz + "]'s ref not found");
         }
     }
 

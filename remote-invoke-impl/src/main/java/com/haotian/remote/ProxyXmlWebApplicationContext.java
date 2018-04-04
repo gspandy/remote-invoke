@@ -1,6 +1,10 @@
 package com.haotian.remote;
 
 import com.haotian.plugins.config.PropertiesBeanFactory;
+import com.haotian.remote.dubbo.DubboConsumerWriter;
+import com.haotian.remote.dubbo.DubboProviderWriter;
+import com.haotian.remote.hsf.HsfConsumerWriter;
+import com.haotian.remote.hsf.HsfProviderWriter;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
 import org.springframework.beans.factory.config.PropertiesFactoryBean;
@@ -27,6 +31,19 @@ public class ProxyXmlWebApplicationContext extends XmlWebApplicationContext {
     private static final Properties CONTEXT_PROPS = new Properties();
     private static final Map<Class<?>, Set<String>> PROXY_BEAN_MAPPINGS = new HashMap<Class<?>, Set<String>>();
     private static final Set<String> BEAN_NAMES_HOLDER = new HashSet<String>();
+    private static final Map<String, ConsumerWriter> CONSUMER_STORE = new HashMap<String, ConsumerWriter>();
+    private static final Map<String, ProviderWriter> PROVIDER_STORE = new HashMap<String, ProviderWriter>();
+
+    static {
+        ConsumerWriter consumerWriter = new HsfConsumerWriter();
+        CONSUMER_STORE.put(consumerWriter.strategy(), consumerWriter);
+        consumerWriter = new DubboConsumerWriter();
+        CONSUMER_STORE.put(consumerWriter.strategy(), consumerWriter);
+        ProviderWriter providerWriter = new HsfProviderWriter();
+        PROVIDER_STORE.put(providerWriter.strategy(), providerWriter);
+        providerWriter = new DubboProviderWriter();
+        PROVIDER_STORE.put(providerWriter.strategy(), providerWriter);
+    }
 
     private static final void addProxyBean(Class<?> beanClass, String beanName) {
         if (logger.isLoggable(Level.INFO)) {
@@ -181,8 +198,33 @@ public class ProxyXmlWebApplicationContext extends XmlWebApplicationContext {
     }
 
     public static byte[] genenrateConsumerBeans(List<RemoteConsumer> consumers, List<RemoteProvider> providerList) {
-        // TODO: implements DUBBO
-        byte[] springBeans = getRemoteStrategy().equals("HSF") ? generateHsfConsumerBeans(consumers, providerList) : generateHsfConsumerBeans(consumers, providerList);
+        Map<String, String> providerInterfaces = new HashMap<String, String>();
+        for (RemoteProvider provider : providerList) {
+            providerInterfaces.put(provider.getInterface() + ":" + provider.getVersion() + ":" + provider.getGroup(), provider.getRef());
+        }
+        ConsumerWriter consumerWriter = CONSUMER_STORE.get(getRemoteStrategy());
+        consumerWriter.beforeWrite();
+        for (RemoteConsumer consumer : consumers) {
+            if (providerInterfaces.containsKey(consumer.getInterface() + ":" + consumer.getVersion() + ":" + consumer.getGroup())) {
+                if (logger.isLoggable(Level.INFO)) {
+                    logger.info("consumer[" + consumer.getInterface() + ":" + consumer.getVersion() + ":" + consumer.getGroup() + "]'s provider exists; Do not publish consumer.");
+                }
+                continue;
+            }
+            if (consumer.getBeanId() == null || "".equals(consumer.getBeanId())) {
+                throw new RuntimeException("consumerId required[" + consumer.getInterface());
+            }
+
+            if (providerInterfaces.containsValue(consumer.getBeanId())) {
+                if (logger.isLoggable(Level.INFO)) {
+                    logger.info("consumer[" + consumer.getBeanId() + ":" + consumer.getInterface() + ":" + consumer.getVersion() + ":" + consumer.getGroup() + "]'s conflict.");
+                }
+                continue;
+            }
+            consumerWriter.write(consumer);
+        }
+        consumerWriter.afterWrite();
+        byte[] springBeans = consumerWriter.toByteArray();
         if (logger.isLoggable(Level.INFO)) {
             logger.info(new String(springBeans));
         }
@@ -190,15 +232,29 @@ public class ProxyXmlWebApplicationContext extends XmlWebApplicationContext {
     }
 
     private byte[] generateProviderBeans(List<RemoteProvider> providers) {
-        // TODO: implements DUBBO
-        byte[] springBeans = getRemoteStrategy().equals("HSF") ? generateHsfProviderBeans(providers) : generateHsfProviderBeans(providers);
+        ProviderWriter providerWriter = PROVIDER_STORE.get(getRemoteStrategy());
+        providerWriter.beforeWrite();
+        for (RemoteProvider provider : providers) {
+            if (provider.getRef() == null || "".equals(provider.getRef())) {
+                if (logger.isLoggable(Level.INFO)) {
+                    logger.info("Provider [" + getRealValue(provider.getInterface()) + ":" + getRealValue(provider.getVersion()) + "] ref not exists.");
+                }
+                continue;
+            }
+            if (provider.getRemoteProviderFactoryBean() != null && BEAN_NAMES_HOLDER.contains(provider.getRef())) {
+                throw new IllegalStateException("Class[" + provider.getInterface() + "] bean_id has defined");
+            }
+            providerWriter.write(provider);
+        }
+        providerWriter.afterWrite();
+        byte[] springBeans = providerWriter.toByteArray();
         if (logger.isLoggable(Level.INFO)) {
             logger.info(new String(springBeans));
         }
         return springBeans;
     }
 
-    private static String getRealValue(final String value) {
+    public static String getRealValue(final String value) {
         if (value == null || !value.startsWith("${") || !value.endsWith("}")) {
             return value;
         }
@@ -213,201 +269,4 @@ public class ProxyXmlWebApplicationContext extends XmlWebApplicationContext {
         return parsedValue;
     }
 
-    private static byte[] generateHsfConsumerBeans(List<RemoteConsumer> consumers, List<RemoteProvider> providerList) {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        PrintStream print = new PrintStream(output);
-        Map<String, String> providerInterfaces = new HashMap<String, String>();
-        for (RemoteProvider provider : providerList) {
-            String providerVersion = getRealValue(provider.getVersion());
-            String providerGroup = getRealValue(provider.getGroup());
-            providerInterfaces.put(provider.getInterface() + ":" + providerVersion + ":" + providerGroup, provider.getRef());
-        }
-        print.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-        print.println("<beans xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"");
-        print.println("xmlns:hsf=\"http://www.taobao.com/hsf\"");
-        print.println("xmlns=\"http://www.springframework.org/schema/beans\"");
-        print.println("xsi:schemaLocation=\"http://www.springframework.org/schema/beans");
-        print.println("http://www.springframework.org/schema/beans/spring-beans-2.5.xsd");
-        print.println("http://www.taobao.com/hsf");
-        print.println("http://www.taobao.com/hsf/hsf.xsd\">");
-        for (RemoteConsumer consumer : consumers) {
-            String consumerVersion = getRealValue(consumer.getVersion());
-            String consumerGroup = getRealValue(consumer.getGroup());
-            if (providerInterfaces.containsKey(consumer.getInterface() + ":" + consumerVersion + ":" + consumerGroup)) {
-                if (logger.isLoggable(Level.INFO)) {
-                    logger.info("consumer[" + consumer.getInterface() + ":" + consumerVersion + ":" + consumerGroup + "]'s provider exists; Do not publish consumer.");
-                }
-                continue;
-            }
-            String beanId = getRealValue(consumer.getBeanId());
-            if (beanId == null || "".equals(beanId)) {
-                throw new RuntimeException("consumerId required[" + consumer.getInterface());
-            }
-
-            if (providerInterfaces.containsValue(beanId)) {
-                if (logger.isLoggable(Level.INFO)) {
-                    logger.info("consumer[" + beanId + ":" + consumer.getInterface() + ":" + consumer.getVersion() + ":" + consumer.getGroup() + "]'s conflict.");
-                }
-                continue;
-            }
-
-            print.print("<hsf:consumer");
-
-            print.print(" id=\"");
-            print.print(beanId);
-            print.print("\"");
-
-            print.print(" interface=\"");
-            print.print(getRealValue(consumer.getInterface()));
-            print.print("\"");
-
-            print.print(" version=\"");
-            print.print(getRealValue(consumer.getVersion()));
-            print.print("\"");
-
-            if (consumer.getGroup() != null && !"".equals(consumer.getGroup())) {
-                print.print(" group=\"");
-                print.print(getRealValue(consumer.getGroup()));
-                print.print("\"");
-            }
-
-            if (consumer.getTarget() != null && !"".equals(consumer.getTarget())) {
-                print.print(" target=\"");
-                print.print(getRealValue(consumer.getTarget()));
-                print.print("\"");
-            }
-
-            if (consumer.getClientTimeout() != 0) {
-                print.print(" clientTimeout=\"");
-                print.print(consumer.getClientTimeout());
-                print.print("\"");
-            }
-
-            if (consumer.getConnectionNum() != 0) {
-                print.print(" connectionNum=\"");
-                print.print(consumer.getConnectionNum());
-                print.print("\"");
-            }
-
-            print.println("></hsf:consumer>");
-        }
-        print.println("</beans>");
-        print.flush();
-        print.close();
-        return output.toByteArray();
-    }
-
-    private byte[] generateHsfProviderBeans(List<RemoteProvider> providers) {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        PrintStream print = new PrintStream(output);
-        print.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-        print.println("<beans xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"");
-        print.println("xmlns:hsf=\"http://www.taobao.com/hsf\"");
-        print.println("xmlns=\"http://www.springframework.org/schema/beans\"");
-        print.println("xsi:schemaLocation=\"http://www.springframework.org/schema/beans");
-        print.println("http://www.springframework.org/schema/beans/spring-beans-2.5.xsd");
-        print.println("http://www.taobao.com/hsf");
-        print.println("http://www.taobao.com/hsf/hsf.xsd\">");
-        for (RemoteProvider provider : providers) {
-            String providerRef = getRealValue(provider.getRef());
-            if ((providerRef == null || "".equals(providerRef)) && provider.getRemoteProviderFactoryBean() == null) {
-                if (logger.isLoggable(Level.INFO)) {
-                    logger.info("Provider [" + getRealValue(provider.getInterface()) + ":" + getRealValue(provider.getVersion()) + "] ref not exists.");
-                }
-                continue;
-            }
-
-            RemoteProviderFactoryBean remoteProviderFactoryBean = provider.getRemoteProviderFactoryBean();
-            if (providerRef == null || "".equals(providerRef)) {
-                Class<?> targetClass = remoteProviderFactoryBean.getObjectType();
-                Class<?>[] interfaces = targetClass.getInterfaces();
-                for (Class<?> intface : interfaces) {
-                    ProxyConsumer proxyConsumer = intface.getAnnotation(ProxyConsumer.class);
-                    if (proxyConsumer == null) {
-                        continue;
-                    }
-                    providerRef = proxyConsumer.beanId();
-                }
-                if (providerRef == null) {
-                    throw new IllegalStateException("Class[" + targetClass + "] is not a ProxyConsumer subclass");
-                }
-                /*if (BEAN_NAMES_HOLDER.contains(providerRef)) {
-                    providerRef = "_" + providerRef + "_" + provider.getVersion();
-                }*/
-
-                if (BEAN_NAMES_HOLDER.contains(providerRef)) {
-                    throw new IllegalStateException("Class[" + targetClass + "] bean_id has defined");
-                }
-            }
-            print.print("<hsf:provider");
-
-            print.print(" id=\"");
-            print.print(providerRef + "-" + getRealValue(provider.getVersion()) + "-provider");
-            print.print("\"");
-
-            print.print(" interface=\"");
-            print.print(getRealValue(provider.getInterface()));
-            print.print("\"");
-
-            print.print(" ref=\"");
-            print.print(getRealValue(providerRef));
-            print.print("\"");
-
-            print.print(" version=\"");
-            print.print(getRealValue(provider.getVersion()));
-            print.print("\"");
-
-            if (provider.getGroup() != null && !"".equals(provider.getGroup())) {
-                print.print(" group=\"");
-                print.print(getRealValue(provider.getGroup()));
-                print.print("\"");
-            }
-
-            if (provider.getClientTimeout() != 0) {
-                print.print(" clientTimeout=\"");
-                print.print(provider.getClientTimeout());
-                print.print("\"");
-            }
-
-            if (provider.getCorePoolSize() != 0) {
-                print.print(" corePoolSize=\"");
-                print.print(provider.getCorePoolSize());
-                print.print("\"");
-            }
-
-            if (provider.getMaxPoolSize() != 0) {
-                print.print(" maxPoolSize=\"");
-                print.print(provider.getMaxPoolSize());
-                print.print("\"");
-            }
-
-            if (provider.getSerializeType() != null && !"".equals(provider.getSerializeType())) {
-                print.print(" serializeType=\"");
-                print.print(getRealValue(provider.getSerializeType()));
-                print.print("\"");
-            }
-
-            print.println("></hsf:provider>");
-
-            if (remoteProviderFactoryBean != null && remoteProviderFactoryBean.getObjectType().isInterface()) {
-                print.print("\n<bean id=\"");
-                print.print(providerRef);
-                print.print("\" class=\"");
-                print.print(RemoteProviderFactoryBean.class.getName());
-                print.print("\">");
-                print.print("\n    <constructor-arg index=\"0\" value=\"");
-                print.print(remoteProviderFactoryBean.getRemoteInvokeHandlerClass().getName());
-                print.print("\"/>");
-
-                print.print("\n    <constructor-arg index=\"1\" value=\"");
-                print.print(remoteProviderFactoryBean.getObjectType().getName());
-                print.print("\"/>");
-                print.print("\n</bean>");
-            }
-        }
-        print.println("</beans>");
-        print.flush();
-        print.close();
-        return output.toByteArray();
-    }
 }

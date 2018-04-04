@@ -9,15 +9,15 @@ public class RemoteConsumer {
     private String group;
     private String target;
 
-    protected RemoteConsumer(Class<?> consumerClass) {
+    public RemoteConsumer(Class<?> consumerClass) {
         ProxyConsumer proxyConsumer = consumerClass.getAnnotation(ProxyConsumer.class);
-        this.version = proxyConsumer.version();
+        this.version = ProxyXmlWebApplicationContext.getRealValue(proxyConsumer.version());
         this.clientTimeout = proxyConsumer.clientTimeout();
         this.connectionNum = proxyConsumer.connectionNum();
         this.intface = consumerClass.getName();
-        this.beanId = proxyConsumer.beanId();
-        this.group = proxyConsumer.group();
-        this.target = proxyConsumer.target();
+        this.beanId = ProxyXmlWebApplicationContext.getRealValue(proxyConsumer.beanId());
+        this.group = ProxyXmlWebApplicationContext.getRealValue(proxyConsumer.group());
+        this.target = ProxyXmlWebApplicationContext.getRealValue(proxyConsumer.target());
     }
 
     public String getTarget() {
