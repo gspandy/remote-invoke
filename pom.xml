@@ -13,6 +13,8 @@
         <module>remote-invoke-api</module>
         <module>remote-invoke-impl</module>
         <module>remote-invoke-parent</module>
+        <module>remote-invoke-dubbo-deploy</module>
+        <module>remote-invoke-edas-deploy</module>
     </modules>
 
     <build>

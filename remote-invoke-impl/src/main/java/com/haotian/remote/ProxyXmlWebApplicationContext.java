@@ -188,7 +188,7 @@ public class ProxyXmlWebApplicationContext extends XmlWebApplicationContext {
         locationInput.close();
     }
 
-    private static String getRemoteStrategy() {
+    public static String getRemoteStrategy() {
         String remoteStrategy = CONTEXT_PROPS.getProperty("remote.strategy");
         if (remoteStrategy == null) {
             remoteStrategy = "HSF";
