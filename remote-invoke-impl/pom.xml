@@ -54,5 +54,10 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>com.haotian.proxy</groupId>
+            <artifactId>proxy-cache-redis</artifactId>
+        </dependency>
+
     </dependencies>
 </project>

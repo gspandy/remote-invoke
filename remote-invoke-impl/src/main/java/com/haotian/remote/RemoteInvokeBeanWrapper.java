@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 
 public class RemoteInvokeBeanWrapper implements BeanPostProcessor {
     private final Logger logger = Logger.getLogger(this.getClass().getName());
+    private RemoteInvokeServiceEx remoteInvokeService;
 
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
@@ -74,6 +75,11 @@ public class RemoteInvokeBeanWrapper implements BeanPostProcessor {
             }
             return bean;
         }
+
+        if (this.remoteInvokeService != null) {
+            this.remoteInvokeService.registerRemoteInvokeClass(beanClass);
+        }
+
         findSource = false;
         Method[] methods = beanClass.getMethods();
         for (Method method: methods) {
@@ -97,5 +103,9 @@ public class RemoteInvokeBeanWrapper implements BeanPostProcessor {
             logger.info("wrap bean[" + beanName + "]");
         }
         return Proxy.newProxyInstance(this.getClass().getClassLoader(), supperInterfaces, new RemoteMethodInvokeHandler(bean, methods, beanRemoteHandler));
+    }
+
+    public void setRemoteInvokeService(RemoteInvokeServiceEx remoteInvokeService) {
+        this.remoteInvokeService = remoteInvokeService;
     }
 }
