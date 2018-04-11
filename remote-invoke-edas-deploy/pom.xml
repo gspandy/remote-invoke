@@ -4,15 +4,15 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>remote-invoke-parent</artifactId>
-        <groupId>com.ohaotian.base</groupId>
-        <version>0.0.1-SNAPSHOT</version>
+        <groupId>com.haotian.proxy</groupId>
+        <version>0.0.2-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>remote-invoke-edas-deploy</artifactId>
 
     <dependencies>
         <dependency>
-            <groupId>com.ohaotian.base</groupId>
+            <groupId>com.haotian.proxy</groupId>
             <artifactId>remote-invoke-impl</artifactId>
         </dependency>
         <dependency>

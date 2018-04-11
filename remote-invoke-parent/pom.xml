@@ -3,17 +3,19 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.ohaotian.base</groupId>
+    <groupId>com.haotian.proxy</groupId>
     <artifactId>remote-invoke-parent</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
-        <module.version>0.0.1-SNAPSHOT</module.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jdk.version>1.8</jdk.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <module.version>0.0.2-SNAPSHOT</module.version>
+        <config.loader.version>0.0.1-SNAPSHOT</config.loader.version>
+        <proxy.cache.version>0.0.1-SNAPSHOT</proxy.cache.version>
     </properties>
 
     <dependencyManagement>
@@ -25,6 +27,30 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
+            <dependency>
+                <groupId>com.haotian.proxy</groupId>
+                <artifactId>remote-invoke-api</artifactId>
+                <version>${module.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.haotian.proxy</groupId>
+                <artifactId>remote-invoke-impl</artifactId>
+                <version>${module.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.haotian.plugins</groupId>
+                <artifactId>plugins-config-loader</artifactId>
+                <version>${config.loader.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.haotian.proxy</groupId>
+                <artifactId>proxy-cache-redis</artifactId>
+                <version>${proxy.cache.version}</version>
+            </dependency>
+
+
             <dependency>
                 <groupId>org.ow2.asm</groupId>
                 <artifactId>asm</artifactId>
@@ -51,22 +77,6 @@
                 <artifactId>jackson-core</artifactId>
                 <version>2.9.3</version>
             </dependency>
-            <dependency>
-                <groupId>org.mybatis</groupId>
-                <artifactId>mybatis</artifactId>
-                <version>3.3.1</version>
-            </dependency>
-            <dependency>
-                <groupId>org.mybatis</groupId>
-                <artifactId>mybatis-spring</artifactId>
-                <version>1.2.2</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.springframework</groupId>
-                        <artifactId>spring</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
 
             <dependency>
                 <groupId>org.freemarker</groupId>
@@ -75,36 +85,9 @@
             </dependency>
 
             <dependency>
-                <groupId>com.ohaotian.base</groupId>
-                <artifactId>remote-invoke</artifactId>
-                <version>1.0-SNAPSHOT</version>
-            </dependency>
-
-            <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
                 <version>1.10</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.ohaotian.base</groupId>
-                <artifactId>remote-invoke-api</artifactId>
-                <version>0.0.1-SNAPSHOT</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ohaotian.base</groupId>
-                <artifactId>remote-invoke-impl</artifactId>
-                <version>0.0.1-SNAPSHOT</version>
-            </dependency>
-            <dependency>
-                <groupId>com.haotian.plugins</groupId>
-                <artifactId>plugins-config-loader</artifactId>
-                <version>0.0.1-SNAPSHOT</version>
-            </dependency>
-            <dependency>
-                <groupId>com.haotian.proxy</groupId>
-                <artifactId>proxy-cache-redis</artifactId>
-                <version>0.0.1-SNAPSHOT</version>
             </dependency>
 
             <dependency>

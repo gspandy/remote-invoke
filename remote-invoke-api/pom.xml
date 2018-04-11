@@ -4,9 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>remote-invoke-parent</artifactId>
-        <groupId>com.ohaotian.base</groupId>
-        <version>0.0.1-SNAPSHOT</version>
-        <relativePath>../remote-invoke-parent</relativePath>
+        <groupId>com.haotian.proxy</groupId>
+        <version>0.0.2-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
