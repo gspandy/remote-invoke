@@ -1,5 +1,6 @@
 package com.haotian.remote;
 
+import freemarker.core.Environment;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateExceptionHandler;
@@ -7,10 +8,7 @@ import freemarker.template.TemplateExceptionHandler;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public abstract class AbstractProviderWriter implements ProviderWriter {
     private Configuration cfg;
@@ -41,7 +39,10 @@ public abstract class AbstractProviderWriter implements ProviderWriter {
             Writer writer = new OutputStreamWriter(iobuffer);
             Map<String, Object> model = new HashMap<String, Object>();
             model.put("providers", providers);
-            template.process(model, writer);
+            Environment tplEnv = template.createProcessingEnvironment(model, writer);
+            tplEnv.setLocale(Locale.SIMPLIFIED_CHINESE);
+            tplEnv.setNumberFormat("0.##");
+            tplEnv.process();
             writer.flush();
             writer.close();
             iobuffer.close();
