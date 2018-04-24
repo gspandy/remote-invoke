@@ -7,7 +7,7 @@
         http://www.taobao.com/hsf
         http://www.taobao.com/hsf/hsf.xsd">
     <#list providers as provider>
-    <hsf:provider id="${provider.ref}-${provider.version}-${provider.group}-provider" interface="${provider.interface}" ref="${provider.ref}" <@print "version", provider.version/> <@print "group", provider.group/> <@print "clientTimeout", provider.clientTimeout?string.number/> <@print "serializeType", provider.serializeType/> <@print "corePoolSize", provider.corePoolSize?string.number/> <@print "maxPoolSize", provider.maxPoolSize?string.number/>/>
+    <hsf:provider id="${provider.ref}-${provider.version}-${provider.group}-provider" interface="${provider.interface}" ref="${provider.ref}" <@print "version", provider.version/> <@print "group", provider.group/> <@print "clientTimeout", provider.clientTimeout?string('0.##')/> <@print "serializeType", provider.serializeType/> <@print "corePoolSize", provider.corePoolSize?string('0.##')/> <@print "maxPoolSize", provider.maxPoolSize?string('0.##')/>/>
     <#if (provider.remoteProviderFactoryBean??)?then(true, false)>
     <bean id="${provider.ref}" class="${provider.remoteProviderFactoryBean.class.name}">
         <constructor-arg index="0" value="${provider.remoteProviderFactoryBean.remoteInvokeHandlerClass.name}"/>

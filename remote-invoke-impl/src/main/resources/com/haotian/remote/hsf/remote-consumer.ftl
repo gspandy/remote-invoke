@@ -7,7 +7,7 @@
         http://www.taobao.com/hsf
         http://www.taobao.com/hsf/hsf.xsd">
     <#list consumers as consumer>
-    <hsf:consumer id="${consumer.beanId}" interface="${consumer.interface}" connectionNum="${consumer.connectionNum}" <@print "version", consumer.version/> <@print "group", consumer.group/> <@print "clientTimeout",consumer.clientTimeout?string.number/> <@print "target", consumer.target/>/>
+    <hsf:consumer id="${consumer.beanId}" interface="${consumer.interface}" connectionNum="${consumer.connectionNum?string('0.##')}" <@print "version", consumer.version/> <@print "group", consumer.group/> <@print "clientTimeout",consumer.clientTimeout?string('0.##')/> <@print "target", consumer.target/>/>
     </#list>
 </beans>
 <#macro print key value><#if value != '0' && value != ''>${key}="${value}"</#if></#macro>

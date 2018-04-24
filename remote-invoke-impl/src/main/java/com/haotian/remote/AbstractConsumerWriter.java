@@ -1,6 +1,5 @@
 package com.haotian.remote;
 
-import freemarker.core.Environment;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateExceptionHandler;
@@ -8,7 +7,10 @@ import freemarker.template.TemplateExceptionHandler;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public abstract class AbstractConsumerWriter implements ConsumerWriter {
     private Configuration cfg;
@@ -40,9 +42,7 @@ public abstract class AbstractConsumerWriter implements ConsumerWriter {
             Writer writer = new OutputStreamWriter(iobuffer);
             Map<String, Object> model = new HashMap<String, Object>();
             model.put("consumers", consumers);
-            Environment tplEnv = template.createProcessingEnvironment(model, writer);
-            tplEnv.setLocale(Locale.SIMPLIFIED_CHINESE);
-            tplEnv.setNumberFormat("0.##");
+            template.process(model, writer);
             writer.flush();
             writer.close();
             iobuffer.close();

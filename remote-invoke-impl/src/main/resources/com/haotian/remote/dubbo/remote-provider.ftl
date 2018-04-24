@@ -5,7 +5,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://code.alibabatech.com/schema/dubbo http://code.alibabatech.com/schema/dubbo/dubbo.xsd">
 
 <#list providers as provider>
-    <dubbo:service interface="${provider.interface}" ref="${provider.ref}" <@print "version", provider.version/> <@print "group", provider.group/> <@print "timeout", provider.clientTimeout?string.number/> <@print "executes", provider.maxPoolSize?string.number/>/>
+    <dubbo:service interface="${provider.interface}" ref="${provider.ref}" <@print "version", provider.version/> <@print "group", provider.group/> <@print "timeout", provider.clientTimeout?string('0.##')/> <@print "executes", provider.maxPoolSize?string('0.##')/>/>
     <#if (provider.remoteProviderFactoryBean??)?then(true, false)>
         <bean id="${provider.ref}" class="${provider.remoteProviderFactoryBean.class.name}">
             <constructor-arg index="0" value="${provider.remoteProviderFactoryBean.remoteInvokeHandlerClass.name}"/>
